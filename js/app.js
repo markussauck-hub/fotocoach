@@ -1,9 +1,9 @@
 // Foto-Coach – Hauptlogik: Aufnahme -> (Panorama) -> KI-Analyse -> Ergebnis
-import { analyze, judge, GeminiError } from './gemini.js?v=0.4.9';
-import { measure, readExif, describe } from './measure.js?v=0.4.9';
-import { saveSession, loadSession } from './session.js?v=0.4.9';
-import { progress } from './progress.js?v=0.4.9';
-import { cleanKey, looksLikeKey, testKey, probeProxy, readClipboard, handoverUrl, qrSvg, takeKeyFromHash } from './keys.js?v=0.4.9';
+import { analyze, judge, GeminiError } from './gemini.js?v=0.4.10';
+import { measure, readExif, describe } from './measure.js?v=0.4.10';
+import { saveSession, loadSession } from './session.js?v=0.4.10';
+import { progress } from './progress.js?v=0.4.10';
+import { cleanKey, looksLikeKey, testKey, probeProxy, readClipboard, handoverUrl, qrSvg, takeKeyFromHash } from './keys.js?v=0.4.10';
 
 const $ = (s) => document.querySelector(s);
 const MAX_PHOTOS = 8;
@@ -695,7 +695,14 @@ function nextAttempt(nr, text) {
   return box;
 }
 
+// Speichern/Teilen steht immer am Ende eines Versuchs – dort, wo man nach dem Lesen des Feedbacks ankommt
 function renderAttempt(nr, a, idx) {
+  const wrap = renderAttemptBody(nr, a, idx);
+  wrap.append(saveRow(nr, a, idx));
+  return wrap;
+}
+
+function renderAttemptBody(nr, a, idx) {
   const wrap = document.createElement('div'); wrap.className = 'feedback';
   const head = document.createElement('div'); head.className = 'fb-head';
   head.textContent = `Versuch ${idx + 1}`;
@@ -715,8 +722,6 @@ function renderAttempt(nr, a, idx) {
     }
     wrap.append(chips);
   }
-
-  wrap.append(saveRow(nr, a, idx));
 
   if (a.pending) {
     const st = document.createElement('p'); st.className = 'fb-status'; st.id = `st-${a.id}`; st.setAttribute('aria-live', 'polite');
@@ -891,7 +896,7 @@ async function runJudge(nr, a) {
 }
 
 /* ---------- Feedback für Tester (-> /api/feedback, Mail über den Kontakt-Dienst) ---------- */
-const APP_VERSION = '0.4.9';
+const APP_VERSION = '0.4.10';
 let lastError = '';
 let fbToken = '';
 const fbDlg = $('#feedback');
@@ -962,7 +967,7 @@ const greens = (fb) => fb && fb.motiv_erkannt ? CRIT.filter(([k]) => fb.kriterie
 
 function saveRow(nr, a, idx) {
   const row = document.createElement('div'); row.className = 'save-row';
-  if (!a.orig) return row;
+  if (!a.orig && !a.blob) return row;
   const b = document.createElement('button'); b.type = 'button';
   const star = greens(a.fb) >= 2;
   if (a.saved) {
@@ -1016,8 +1021,14 @@ async function shareFiles(files) {
   catch (e) { return e && e.name === 'AbortError' ? 'abort' : 'unsupported'; }
 }
 
+// Original (volle Auflösung) – bei Versuchen aus alten Sitzungen ohne Original die gespeicherte 1600-px-Fassung
+function attemptFile(nr, a, idx) {
+  if (a.orig) return new File([a.orig], attemptFileName(nr, a, idx), { type: a.origType || 'image/jpeg' });
+  return new File([a.blob], attemptFileName(nr, { ...a, origType: 'image/jpeg' }, idx), { type: 'image/jpeg' });
+}
+
 async function saveAttempt(nr, a, idx) {
-  const file = new File([a.orig], attemptFileName(nr, a, idx), { type: a.origType });
+  const file = attemptFile(nr, a, idx);
   if (IS_IOS) {
     const r = await shareFiles([file]);
     if (r === 'abort') return;
@@ -1032,7 +1043,7 @@ async function saveAttempt(nr, a, idx) {
 }
 
 async function shareAttempt(nr, a, idx) {
-  const file = new File([a.orig], attemptFileName(nr, a, idx), { type: a.origType });
+  const file = attemptFile(nr, a, idx);
   const r = await shareFiles([file]);
   if (r === 'unsupported') toast('Teilen wird von diesem Browser nicht unterstützt – nutze „Speichern“.');
 }

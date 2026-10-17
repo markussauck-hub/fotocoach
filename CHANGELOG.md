@@ -1,5 +1,11 @@
 # Änderungsverlauf
 
+## v0.4.10: Speichern am Ende jedes Versuchs
+
+- Die Leiste „💾 Speichern / ⭐ Behalten / ↗ Teilen“ steht jetzt **am Ende** jedes Versuchs, unter „Nächster Versuch“. Dort kommt man nach dem Lesen des Feedbacks an. Vorher saß sie oben zwischen Foto und Feedback und wurde übersehen.
+- „⭐ Behalten“ ist jetzt gold statt cyan und konkurriert nicht mehr mit dem „Nächster Versuch“-Knopf.
+- Versuche aus alten Sitzungen ohne Originalfoto lassen sich trotzdem speichern, dann in der gespeicherten Fassung mit 1600 px.
+
 ## v0.4.9: Willkommenskarte
 
 - Beim **ersten Aufruf** erscheint eine Einführung: wozu der Foto-Coach da ist, drei Schritte (Umschauen → Motive entdecken → Besser werden) und ein Hinweis zu Kosten und Datenschutz. „Los geht's“ schließt sie, danach kommt sie nicht wieder.
