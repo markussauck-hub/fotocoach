@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Foto-Coach</title>
+  <meta name="description" content="Fotos von einem Ort machen – die KI kreist die besten Motive ein und erklärt, wie du sie fotografierst.">
+  <meta name="theme-color" content="#070b14">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Martian+Mono:wght@400;600&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css?v=0.4.9">
+</head>
+<body>
+  <header class="topbar">
+    <button class="feedback-pill" id="btn-feedback" type="button" title="Fehler melden, Ideen oder Lob an den Entwickler">
+      <span>Feedback</span>
+    </button>
+    <h1 class="brand">Foto-Coach</h1>
+    <button class="icon-btn" id="btn-settings" type="button" aria-label="Einstellungen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <!-- Schritt 1: Aufnahme -->
+    <section id="screen-capture" class="screen active" aria-labelledby="cap-title">
+      <h2 id="cap-title" class="sr-only">Fotos aufnehmen</h2>
+
+      <div class="viewfinder" id="viewfinder">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas id="ghost" class="ghost" aria-hidden="true"></canvas>
+        <div class="vf-guide" id="vf-guide" hidden aria-hidden="true"><span>Überlappung</span></div>
+        <div class="flash" id="flash" aria-hidden="true"></div>
+
+        <div class="vf-fallback" id="vf-fallback" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8Z"/><circle cx="12" cy="13" r="4"/></svg>
+          <p id="vf-fallback-text">Kamera nicht verfügbar.</p>
+          <div class="vf-fallback-actions">
+            <label class="glass-btn">
+              <input type="file" id="file-camera" accept="image/*" capture="environment" hidden>
+              Kamera-App öffnen
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <p class="hint" id="cap-hint">Ein Foto reicht. Für ein Panorama: auf der Stelle stehen bleiben, von links nach rechts drehen und jedes Foto etwa ein Drittel überlappen lassen.</p>
+
+      <button class="resume-banner" id="resume-banner" type="button" hidden>
+        <span class="sb-icon" aria-hidden="true">↩</span>
+        <span id="resume-text">Letzte Auswertung fortsetzen</span>
+      </button>
+
+      <button class="setup-banner" id="setup-banner" type="button" hidden>
+        <span class="sb-icon" aria-hidden="true">🔑</span>
+        <span><b>KI noch nicht eingerichtet.</b> Einmalig einen kostenlosen Google-Schlüssel hinterlegen – dauert eine Minute.</span>
+      </button>
+
+      <div class="controls">
+        <label class="glass-btn round-side" title="Kamera-App des Handys öffnen (volle Auflösung)">
+          <input type="file" id="file-camera-main" accept="image/*" capture="environment" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8Z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>Kamera</span>
+        </label>
+        <button class="shutter" id="btn-shutter" type="button" aria-label="Foto im Sucher aufnehmen"><span></span></button>
+        <button class="glass-btn primary round-side" id="btn-next" type="button" disabled>
+          <span>Auswerten</span>
+          <span class="count" id="photo-count">0</span>
+        </button>
+      </div>
+
+      <div class="subcontrols">
+        <label class="glass-btn gallery-btn">
+          <input type="file" id="file-gallery" accept="image/*" multiple hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+          Aus Galerie
+        </label>
+        <p class="gallery-tip">Für Porträtmodus, Zoom &amp; Co.: mit der normalen Kamera-App fotografieren, dann „Aus Galerie“.</p>
+      </div>
+
+      <ol class="thumbs" id="thumbs" aria-label="Aufgenommene Fotos"></ol>
+    </section>
+
+    <!-- Schritt 2: Verarbeitung -->
+    <section id="screen-work" class="screen" aria-labelledby="work-title">
+      <div class="panel work-panel">
+        <h2 id="work-title" class="panel-title">Wird ausgewertet</h2>
+        <ol class="steps" id="steps">
+          <li data-step="prep"><span class="dot"></span><span class="label">Fotos vorbereiten</span></li>
+          <li data-step="pano"><span class="dot"></span><span class="label">Panorama zusammensetzen</span></li>
+          <li data-step="ai"><span class="dot"></span><span class="label">KI sucht die besten Motive</span></li>
+        </ol>
+        <div class="fprog" data-prog="analyze" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Fortschritt der KI-Auswertung (geschätzt)" hidden><div class="fprog-track"><div class="fprog-fill"></div></div><span class="fprog-label"></span></div>
+        <p class="work-status" id="work-status" aria-live="polite">…</p>
+        <div class="work-preview" id="work-preview"></div>
+        <button class="glass-btn" id="btn-cancel" type="button">Abbrechen</button>
+      </div>
+    </section>
+
+    <!-- Schritt 3: Ergebnis -->
+    <section id="screen-result" class="screen" aria-labelledby="res-title">
+      <h2 id="res-title" class="sr-only">Ergebnis</h2>
+      <div id="result-images"></div>
+      <div class="panel summary" id="summary" hidden></div>
+      <div class="error-panel panel" id="result-error" hidden>
+        <p id="result-error-text"></p>
+        <div class="row">
+          <button class="glass-btn primary" id="btn-retry" type="button">Nochmal versuchen</button>
+          <button class="glass-btn" id="btn-error-settings" type="button">Einstellungen</button>
+        </div>
+      </div>
+      <ol class="motifs" id="motifs"></ol>
+      <div class="result-actions">
+        <button class="glass-btn" id="btn-save" type="button">Bild speichern</button>
+        <button class="glass-btn" id="btn-share" type="button" hidden>Teilen</button>
+        <button class="glass-btn primary" id="btn-restart" type="button">Neue Fotos</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Einrichtung beim ersten Start -->
+  <!-- Willkommen: erscheint beim ersten Aufruf, später über die Einstellungen -->
+  <dialog id="intro" class="intro" aria-labelledby="intro-title">
+    <form method="dialog">
+      <p class="intro-kicker">Willkommen beim</p>
+      <h2 class="intro-title" id="intro-title">Foto-Coach</h2>
+      <p class="intro-lead">Dein Fotolehrer für unterwegs: Er zeigt dir, <b>was</b> sich an einem Ort zu fotografieren lohnt – und <b>wie</b> du es gut hinbekommst.</p>
+      <ol class="intro-steps">
+        <li><span class="is-num">1</span><div><b>Umschauen</b><p>Mach ein Foto von dem Ort, an dem du gerade bist – oder mehrere nebeneinander für ein Panorama.</p></div></li>
+        <li><span class="is-num">2</span><div><b>Motive entdecken</b><p>Die KI kreist die besten Motive ein und erklärt Perspektive, Bildaufbau, Licht und Standort.</p></div></li>
+        <li><span class="is-num">3</span><div><b>Besser werden</b><p>Fotografier ein Motiv und hol dir Feedback vom Coach – Versuch für Versuch.</p></div></li>
+      </ol>
+      <div class="intro-desktop" id="intro-desktop" hidden>
+        <div class="qr" id="intro-qr"></div>
+        <p><b>Gedacht fürs Handy.</b> Der Foto-Coach braucht die Kamera – scanne den Code mit dem Handy, um ihn dort zu öffnen.</p>
+      </div>
+      <p class="intro-small">Kostenlos und ohne Anmeldung. Auf unserem Server wird nichts gespeichert. Zur Auswertung gehen die Fotos an Google Gemini, das sie im kostenlosen Kontingent zur Produktverbesserung nutzen darf – fotografiere daher am besten keine Personen.</p>
+      <button class="glass-btn primary intro-go" value="go" type="submit">Los geht's</button>
+    </form>
+  </dialog>
+
+  <dialog id="setup" class="settings setup">
+    <form method="dialog">
+      <h2 class="panel-title">Einmalig einrichten</h2>
+      <p class="setup-intro">Für die Motiv-Analyse braucht der Foto-Coach einen <b>kostenlosen Schlüssel von Google</b>. Das geht in drei Schritten:</p>
+      <ol class="setup-steps">
+        <li>
+          <span class="sn">1</span>
+          <div>
+            <a class="glass-btn" id="setup-open" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Schlüssel bei Google holen ↗</a>
+            <p>Mit dem Google-Konto anmelden, <b>„Create API key“</b> tippen, dann den Schlüssel <b>kopieren</b> und hierher zurückkommen.</p>
+          </div>
+        </li>
+        <li>
+          <span class="sn">2</span>
+          <div>
+            <button type="button" class="glass-btn primary" id="setup-paste">📋 Schlüssel einfügen</button>
+            <input type="text" id="setup-key" autocomplete="off" spellcheck="false" placeholder="…oder hier einfügen (AQ.… / AIza…)">
+          </div>
+        </li>
+        <li>
+          <span class="sn">3</span>
+          <div><p class="key-status" id="setup-status" aria-live="polite">Wird nach dem Einfügen automatisch geprüft.</p></div>
+        </li>
+      </ol>
+      <p class="setup-tip">💡 <b>Am PC ist es bequemer:</b> Foto-Coach dort öffnen, Schlüssel in den Einstellungen einfügen, auf <b>„Aufs Handy (QR)“</b> tippen und den Code mit dem Handy scannen.</p>
+      <div class="row end">
+        <button class="glass-btn" value="later" type="submit" formnovalidate>Später</button>
+        <button class="glass-btn primary" value="done" type="submit" id="setup-done" disabled>Fertig</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <!-- Feedback für Tester -->
+  <dialog id="feedback" class="settings">
+    <form id="feedback-form" novalidate>
+      <h2 class="panel-title">Feedback</h2>
+      <p class="setup-intro">Danke fürs Testen! Was ist dir aufgefallen?</p>
+      <fieldset class="fb-kinds">
+        <legend class="field-label">Worum geht's?</legend>
+        <label><input type="radio" name="kind" value="fehler" checked><span>🐞 Fehler</span></label>
+        <label><input type="radio" name="kind" value="idee"><span>💡 Idee</span></label>
+        <label><input type="radio" name="kind" value="lob"><span>👍 Lob</span></label>
+        <label><input type="radio" name="kind" value="sonstiges"><span>💬 Sonstiges</span></label>
+      </fieldset>
+      <label class="field">
+        <span class="field-label">Deine Nachricht</span>
+        <textarea id="fb-message" name="message" rows="5" maxlength="5000" placeholder="Was hast du gemacht, was ist passiert, was hättest du erwartet?"></textarea>
+      </label>
+      <div class="fb-two">
+        <label class="field"><span class="field-label">Name <small>(freiwillig)</small></span>
+          <input type="text" id="fb-name" name="name" maxlength="100" autocomplete="name"></label>
+        <label class="field"><span class="field-label">E-Mail <small>(für Rückfragen, freiwillig)</small></span>
+          <input type="text" id="fb-email" name="email" maxlength="200" inputmode="email" autocomplete="email"></label>
+      </div>
+      <label class="check">
+        <input type="checkbox" id="fb-tech" checked>
+        <span>Technische Angaben mitsenden (App-Version, Gerät/Browser, KI-Einstellungen, letzte Fehlermeldung – keine Fotos, kein Schlüssel) <button type="button" class="link-btn inline" id="fb-tech-show">ansehen</button></span>
+      </label>
+      <pre class="fb-tech-preview" id="fb-tech-preview" hidden></pre>
+      <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <p class="key-status" id="fb-status" aria-live="polite"></p>
+      <div class="row end">
+        <button class="glass-btn" type="button" id="fb-cancel">Schließen</button>
+        <button class="glass-btn primary" type="submit" id="fb-send">Senden</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Warnung: ungespeicherte Kamera-Fotos -->
+  <dialog id="unsaved" class="settings small-dlg">
+    <form method="dialog">
+      <h2 class="panel-title">Fotos noch nicht gespeichert</h2>
+      <p id="unsaved-text"></p>
+      <p class="field-help">Zum Speichern bei den Versuchen auf „💾 Speichern“ bzw. „⭐ Behalten“ tippen.</p>
+      <div class="row end">
+        <button class="glass-btn" value="go" type="submit">Trotzdem neu starten</button>
+        <button class="glass-btn primary" value="back" type="submit" autofocus>Zurück</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Einstellungen -->
+  <dialog id="settings" class="settings">
+    <form method="dialog" id="settings-form">
+      <h2 class="panel-title">Einstellungen</h2>
+
+      <div class="field">
+        <label class="field-label" for="set-key">Gemini-API-Schlüssel</label>
+        <span class="key-row">
+          <input type="password" id="set-key" autocomplete="off" spellcheck="false" placeholder="AQ.… oder AIza…">
+          <button type="button" class="mini-btn" id="btn-key-toggle" aria-label="Schlüssel anzeigen">👁</button>
+        </span>
+        <span class="row tight">
+          <button type="button" class="glass-btn small" id="btn-key-paste">📋 Einfügen</button>
+          <button type="button" class="glass-btn small" id="btn-key-test">Prüfen</button>
+          <button type="button" class="glass-btn small" id="btn-key-qr">Aufs Handy (QR)</button>
+          <button type="button" class="glass-btn small danger" id="btn-key-clear">🗑 Löschen</button>
+        </span>
+        <span class="key-mode" id="key-mode" aria-live="polite"></span>
+        <span class="key-undo" id="key-undo" hidden>Schlüssel gelöscht. <button type="button" class="link-btn inline" id="btn-key-undo">Rückgängig</button></span>
+        <span class="key-status" id="set-key-status" aria-live="polite"></span>
+        <div class="qr-box" id="qr-box" hidden>
+          <div class="qr" id="qr"></div>
+          <p>Mit der Handy-Kamera scannen – der Schlüssel wird dort automatisch übernommen. Der Code enthält deinen Schlüssel: nur selbst scannen, nicht fotografieren oder teilen.</p>
+        </div>
+        <span class="field-help" id="set-key-help">Kostenlos in <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Bleibt nur auf diesem Gerät gespeichert.</span>
+      </div>
+
+      <label class="field">
+        <span class="field-label">KI-Modell</span>
+        <select id="set-model">
+          <option value="gemini-3.6-flash">Gemini 3.6 Flash (empfohlen)</option>
+          <option value="gemini-3.8-flash">Gemini 3.8 Flash (neuer, oft überlastet)</option>
+          <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (schnell, mehr Kontingent)</option>
+          <option value="gemini-flash-latest">gemini-flash-latest (immer neuestes)</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Denkzeit der KI</span>
+        <select id="set-thinking">
+          <option value="low">Schnell (empfohlen)</option>
+          <option value="medium">Gründlich (deutlich langsamer)</option>
+        </select>
+        <span class="field-help">„Gründlich“ lässt Gemini vor der Antwort länger nachdenken – manchmal treffsicherere Markierungen, aber oft doppelt so lange Wartezeit.</span>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Anzahl Motive: <b id="set-count-val" class="num">5</b></span>
+        <input type="range" id="set-count" min="3" max="8" step="1" value="5">
+      </label>
+
+      <label class="check">
+        <input type="checkbox" id="set-ghost" checked>
+        <span>Überlappungshilfe im Sucher (Rest des letzten Fotos einblenden)</span>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" id="set-fallback" checked>
+        <span>Bei Überlastung automatisch erneut versuchen und notfalls ein anderes Gemini-Modell nehmen</span>
+      </label>
+
+      <p class="row"><button type="button" class="glass-btn small" id="btn-show-intro">ℹ Einführung anzeigen</button></p>
+
+      <p class="privacy">Die Fotos werden zur Auswertung an Google Gemini gesendet. Im kostenlosen Kontingent darf Google die Inhalte zur Verbesserung seiner Produkte nutzen – daher am besten keine Fotos mit erkennbaren Personen verwenden.</p>
+
+      <div class="row end">
+        <button class="glass-btn" value="cancel" type="submit" formnovalidate>Abbrechen</button>
+        <button class="glass-btn primary" value="save" type="submit" id="btn-settings-save">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="vendor/qrcode.js"></script>
+  <script type="module" src="js/app.js?v=0.4.9"></script>
+</body>
+</html>
